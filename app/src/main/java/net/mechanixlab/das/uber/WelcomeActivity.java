@@ -92,7 +92,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     //private  Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient,this);
 
 
-    private Location mLastLocation;
+
 
     public static int UPDATE_INTERVAL = 5000;
     public static int FATEST_INTERVAL = 3000;
@@ -105,6 +105,92 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     Marker mCurrent;
     MaterialAnimatedSwitch location_swtich;
     SupportMapFragment mapFragment;
+
+
+    //running image
+
+    private List<LatLng> polyLineList;
+    private Marker curretMarker;
+    private float v;
+    private double lat, lng;
+    private Handler handler;
+    private LatLng startPosition, endPosstion,currentPossiton;
+    private int index, next;
+    private Button btnGo;
+    private PlaceAutocompleteFragment places;
+    private String destinationline;
+    private PolygonOptions polyglineOptions, backpolygonOptions;
+    private Polyline backpolyline, grayPolyline;
+    private IGoogleAPI iGoogleAPIservices;
+
+    Runnable drawPathRunbale = new Runnable() {
+        @Override
+        public void run() {
+            if (index<polyLineList.size()-1)
+            {
+                index++;
+                next=index+1;
+
+            }
+            if (index<polyLineList.size()-1)
+
+            {
+                startPosition =polyLineList.get(index);
+                endPosstion = polyLineList.get(next);
+
+            }
+
+            final ValueAnimator valueAnimator = ValueAnimator.ofFloat(0,1);
+            valueAnimator.setDuration(3000);
+            valueAnimator.setInterpolator(new LinearInterpolator());
+            valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    v=valueAnimator.getAnimatedFraction();
+                    lng = v*endPosstion.longitude+(1-v)*startPosition.longitude;
+                    lat = v*endPosstion.latitude+(1-v)*startPosition.latitude;
+                    LatLng newPos = new LatLng(lat,lng);
+                    curretMarker.setPosition(newPos);
+                    curretMarker.setAnchor(0.5f,0.5f);
+                    curretMarker.setRotation(getBearing(startPosition,newPos));
+                    mMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder()
+                            .target(newPos)
+                            .zoom(15.5f)
+                            .build())
+
+                    );
+                }
+            });
+
+
+            valueAnimator.start();
+            handler.postDelayed(this,3000);
+
+        }
+    };
+
+    private float getBearing(LatLng startPosition, LatLng newPos) {
+        double lat = Math.abs(startPosition.latitude-endPosstion.latitude);
+        double lng = Math.abs(startPosition.longitude-endPosstion.longitude);
+        if (startPosition.latitude<endPosstion.latitude && startPosition.longitude<endPosstion.longitude)
+            return  (float) (Math.toDegrees(Math.atan(lng/lat)));
+
+
+        else if (startPosition.latitude >= endPosstion.latitude && startPosition.longitude<endPosstion.longitude)
+            return  (float) (90-Math.toDegrees(Math.atan(lng/lat)+90));
+
+
+
+        else if (startPosition.latitude >= endPosstion.latitude && startPosition.longitude>=endPosstion.longitude)
+            return (float) (Math.toDegrees(Math.atan(lng/lat)+180));
+
+        else if (startPosition.latitude < endPosstion.latitude && startPosition.longitude>=endPosstion.longitude)
+            return (float) (90-Math.toDegrees(Math.atan(lng/lat)+270));
+
+        return -1;
+    }
+
+
 
 
     @Override
@@ -145,6 +231,9 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
         setUpLocation();
     }
 
+
+
+
     private void startLocationUpdates() {
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -156,6 +245,164 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
 
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mlocationRequest, this);
 
+    }
+
+
+    private void getDirection() {
+        //m
+
+        currentPossiton = new LatLng(Common.mLastLocation.getLatitude(),Common.mLastLocation.getLongitude());
+        String requestAPI = null;
+
+        try {
+
+            requestAPI = "https://maps.googleapis.com/maps/api/directions/json"
+                    + "mode=driving&" + "transit_routing_preference=less_driving" +
+                    "origin=" + currentPossiton.latitude + " ," + currentPossiton.longitude + "&" +
+                    "destination=" + destinationline + "&" + "key=" + getResources().getString(R.string.google_direction_api);
+
+
+            iGoogleAPIservices.getPath(requestAPI)
+                    .enqueue(new Callback<String>() {
+                        @Override
+                        public void onResponse(Call<String> call, Response<String> response) {
+
+
+
+
+                            try {
+
+                                JSONObject jsonObject = new JSONObject(response.body().toString());
+                                JSONArray jsonArray = jsonObject.getJSONArray("routes");
+
+                                for (int i = 0; i < jsonArray.length(); i++) {
+                                    JSONObject route = jsonArray.getJSONObject(i);
+                                    JSONObject poly = route.getJSONObject("overview_polyline");
+                                    String polyline = poly.getString("points");
+                                    polyLineList = decodePoly(polyline);
+                                }
+
+
+                                //adjust boundary
+
+                                LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                                for (LatLng latLng : polyLineList)
+                                    builder.include(latLng);
+                                LatLngBounds bounds = builder.build();
+                                CameraUpdate mCameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 2);
+
+                                mMap.animateCamera(mCameraUpdate);
+                                polyglineOptions = new PolygonOptions();
+                                polyglineOptions.fillColor(Color.GRAY);
+                                polyglineOptions.strokeWidth(5);
+                                //polyglineOptions.startCap(new SquareCap());
+                                // polyglineOptions.endCup(new SquareCap());
+                                polyglineOptions.strokeJointType(JointType.ROUND);
+                                polyglineOptions.addAll(polyLineList);
+                                //   grayPolyline=mMap.addPolyline(polyglineOptions);
+
+
+                                backpolygonOptions = new PolygonOptions();
+                                backpolygonOptions.fillColor(Color.GRAY);
+                                backpolygonOptions.strokeWidth(5);
+                                //  backpolygonOptions.startCap(new SquareCap());
+                                //  backpolygonOptions.endCup(new SquareCap());
+                                backpolygonOptions.strokeJointType(JointType.ROUND);
+                                backpolygonOptions.addAll(polyLineList);
+                                //  grayPolyline=mMap.addPolyline(backpolygonOptions);
+
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(polyLineList.get(polyLineList.size() - 1))
+                                        .title("Pick Up location")
+                                );
+
+
+                                ValueAnimator polylineAmimator = ValueAnimator.ofInt(0, 100);
+                                polylineAmimator.setDuration(2000);
+                                polylineAmimator.setInterpolator(new LinearInterpolator());
+                                polylineAmimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                                    @Override
+                                    public void onAnimationUpdate(ValueAnimator animation) {
+                                        List<LatLng> points = grayPolyline.getPoints();
+                                        int presentvalue = (int) ValueAnimator.getFrameDelay();
+                                        int size = points.size();
+                                        int newPoints = (int) (size * (presentvalue / 100.0f));
+                                        List<LatLng> p = points.subList(0, newPoints);
+                                        backpolyline.setPoints(p);
+                                        curretMarker = mMap.addMarker(new MarkerOptions().position(currentPossiton)
+                                                .flat(true)
+                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.imageicon)));
+
+                                        handler = new Handler();
+                                        index = -1;
+                                        next = -1;
+                                        handler.postDelayed(drawPathRunbale, 3000);
+
+
+                                    }
+                                });
+
+                                polylineAmimator.start();
+
+
+                            } catch (JSONException e) {
+
+                                e.printStackTrace();
+                            }
+                        }
+
+
+                        @Override
+                        public void onFailure(Call<String> call, Throwable t) {
+
+                            Toast.makeText(WelcomeActivity.this, "" + t.getMessage(), Toast.LENGTH_SHORT).show();
+
+                        }
+                    });
+
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+
+
+    }
+
+
+
+    private List decodePoly(String encoded) {
+
+        List poly = new ArrayList();
+        int index = 0, len = encoded.length();
+        int lat = 0, lng = 0;
+
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            LatLng p = new LatLng((((double) lat / 1E5)),
+                    (((double) lng / 1E5)));
+            poly.add(p);
+        }
+
+        return poly;
     }
 
 
@@ -280,14 +527,14 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
         }
 
 
-         mLastLocation =  LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+         Common.mLastLocation =  LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         //    mLastLocation = LocationServices.getFusedLocationProviderClient(mGoogleApiClient,this);
 
 
-        if (mLastLocation != null) {
+        if (Common.mLastLocation != null) {
             if (location_swtich.isChecked()) {
-                final double latitude = mLastLocation.getLatitude();
-                final double longitute = mLastLocation.getLongitude();
+                final double latitude = Common.mLastLocation.getLatitude();
+                final double longitute =Common.mLastLocation.getLongitude();
 
 
                 //update to firebas34
@@ -367,7 +614,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     @Override
     public void onLocationChanged(Location location) {
 
-        mLastLocation = location;
+       Common.mLastLocation = location;
         disPlayLocation();
 
     }

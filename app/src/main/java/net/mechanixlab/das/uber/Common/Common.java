@@ -1,5 +1,7 @@
 package net.mechanixlab.das.uber.Common;
 
+import android.location.Location;
+
 import net.mechanixlab.das.uber.Remote.FCMClient;
 import net.mechanixlab.das.uber.Remote.IFCMService;
 import net.mechanixlab.das.uber.Remote.IGoogleAPI;
@@ -21,6 +23,8 @@ public class Common {
     public static final String user_rider_tbl = "RidersInformation";
     public static final String picup_request_tbl = "PickUpRequest";
     public static final String token_tbl = "Tokens";
+
+    public static Location mLastLocation=null;
 
 
     public static final String baseURL = "https://map.googleapis.com";
