@@ -119,6 +119,8 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
         //intial view
 
 
+
+
         location_swtich = findViewById(R.id.locationswtich);
         location_swtich.setOnCheckedChangeListener(new MaterialAnimatedSwitch.OnCheckedChangeListener() {
             @Override
@@ -220,6 +222,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
 
                 .addApi(LocationServices.API)
                 .addApi(Places.GEO_DATA_API)
+                .addOnConnectionFailedListener(this)
                 .addConnectionCallbacks(this)
                 .build();
         mGoogleApiClient.connect();
@@ -387,5 +390,23 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (mGoogleApiClient != null){
+            mGoogleApiClient.connect();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.unregisterConnectionCallbacks(this);
+            mGoogleApiClient.unregisterConnectionFailedListener(this);
+            mGoogleApiClient.disconnect();
+        }
     }
 }

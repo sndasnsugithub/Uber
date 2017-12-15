@@ -11,11 +11,17 @@ import retrofit2.Retrofit;
 
 public class Common {
 
-//    public static final String baseURL = "https://www.map.googleapis.com.";
-//
-//    public static IGoogleAPI getIGoogleAPI()
-//    {
-//        return ReterofitClient.getClient(baseURL).create(IGoogleAPI.class);
-//    }
+
+    public static final String driver_tbl = "Drivers";
+    public static final String user_driver_tbl = "DriversInformation";
+    public static final String user_rider_tbl = "RidersInformation";
+    public static final String picup_request_tbl = "PickUpRequest";
+
+    public static final String baseURL = "https://www.map.googleapis.com.";
+
+    public static IGoogleAPI getIGoogleAPI()
+    {
+        return ReterofitClient.getClient(baseURL).create(IGoogleAPI.class);
+    }
 
 }

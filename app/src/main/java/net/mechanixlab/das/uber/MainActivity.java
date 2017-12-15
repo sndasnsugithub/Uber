@@ -22,6 +22,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
+import net.mechanixlab.das.uber.Common.Common;
 import net.mechanixlab.das.uber.Model.User;
 
 import dmax.dialog.SpotsDialog;
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseDatabase.getInstance();
-        users = db.getReference("Users");
+        users = db.getReference(Common.user_driver_tbl);
 
 
         //int view
