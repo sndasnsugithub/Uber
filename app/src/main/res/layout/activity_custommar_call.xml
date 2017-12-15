@@ -56,4 +56,37 @@
 
     </LinearLayout>
 
+
+    <LinearLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="2"
+      android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        >
+        <Button
+            android:background="@drawable/btn_sing_in"
+            android:layout_marginRight="6dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="ACCEPT"
+            android:textColor="@android:color/white"
+            android:id="@+id/btnAccpts"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:background="@drawable/btn_registation"
+            android:layout_marginRight="6dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="DECLINE"
+            android:textColor="#000"
+            android:id="@+id/btnCancel"
+            android:layout_height="wrap_content" />
+
+
+    </LinearLayout>
+
+
 </RelativeLayout>

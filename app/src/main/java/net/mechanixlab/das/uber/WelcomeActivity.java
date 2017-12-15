@@ -45,9 +45,11 @@ import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.SquareCap;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import android.Manifest;
 import android.util.Log;
@@ -116,12 +118,18 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     private Handler handler;
     private LatLng startPosition, endPosstion,currentPossiton;
     private int index, next;
-    private Button btnGo;
+   // private Button btnGo;
     private PlaceAutocompleteFragment places;
-    private String destinationline;
+    private String destination;
     private PolygonOptions polyglineOptions, backpolygonOptions;
-    private Polyline backpolyline, grayPolyline;
-    private IGoogleAPI iGoogleAPIservices;
+    private Polyline backPolyline, grayPolyline;
+    private IGoogleAPI mService;
+
+
+    //Persense System
+
+    DatabaseReference onlineRef,currentUserRef;
+
 
     Runnable drawPathRunbale = new Runnable() {
         @Override
@@ -169,7 +177,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
         }
     };
 
-    private float getBearing(LatLng startPosition, LatLng newPos) {
+    private float getBearing(LatLng startPosition, LatLng endPosstion) {
         double lat = Math.abs(startPosition.latitude-endPosstion.latitude);
         double lng = Math.abs(startPosition.longitude-endPosstion.longitude);
         if (startPosition.latitude<endPosstion.latitude && startPosition.longitude<endPosstion.longitude)
@@ -202,6 +210,27 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        //Presense System
+
+        onlineRef = FirebaseDatabase.getInstance().getReference().child("info/connected");
+        currentUserRef = FirebaseDatabase.getInstance().getReference(Common.driver_tbl)
+                                    .child(FirebaseAuth.getInstance().getCurrentUser().getUid());
+
+        onlineRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                //remove the value of Driver table when driver are disconteted
+
+                currentUserRef.onDisconnect().removeValue();
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
         //intial view
 
 
@@ -213,14 +242,20 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
             public void onCheckedChanged(boolean isOnline) {
 
                 if (isOnline) {
+
+                    FirebaseDatabase.getInstance().goOnline();//set Go Online set connected when switch to on
                     startLocationUpdates();
                     disPlayLocation();
 
                     Snackbar.make(mapFragment.getView(), "Yor are Online ", Snackbar.LENGTH_SHORT).show();
                 } else {
+                    FirebaseDatabase.getInstance().goOffline();
+                    //set Disconnted when swtich to off
 
                     stopLocationUpdate();
                     mCurrent.remove();
+                    mMap.clear();
+                    handler.removeCallbacks(drawPathRunbale);
                     Snackbar.make(mapFragment.getView(), "Yor are Offline ", Snackbar.LENGTH_SHORT).show();
                 }
             }
@@ -259,10 +294,10 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
             requestAPI = "https://maps.googleapis.com/maps/api/directions/json"
                     + "mode=driving&" + "transit_routing_preference=less_driving" +
                     "origin=" + currentPossiton.latitude + " ," + currentPossiton.longitude + "&" +
-                    "destination=" + destinationline + "&" + "key=" + getResources().getString(R.string.google_direction_api);
+                    "destination=" + destination + "&" + "key=" + getResources().getString(R.string.google_direction_api);
 
 
-            iGoogleAPIservices.getPath(requestAPI)
+            mService.getPath(requestAPI)
                     .enqueue(new Callback<String>() {
                         @Override
                         public void onResponse(Call<String> call, Response<String> response) {
@@ -328,7 +363,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
                                         int size = points.size();
                                         int newPoints = (int) (size * (presentvalue / 100.0f));
                                         List<LatLng> p = points.subList(0, newPoints);
-                                        backpolyline.setPoints(p);
+                                        backPolyline.setPoints(p);
                                         curretMarker = mMap.addMarker(new MarkerOptions().position(currentPossiton)
                                                 .flat(true)
                                                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.imageicon)));

@@ -1,15 +1,20 @@
 package net.mechanixlab.das.uber;
 
 import android.animation.ValueAnimator;
+import android.app.Notification;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
 import android.view.animation.LinearInterpolator;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.app.Notification;
+import android.app.NotificationManager;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -18,8 +23,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.firebase.messaging.RemoteMessage;
 
 import net.mechanixlab.das.uber.Common.Common;
+import net.mechanixlab.das.uber.Model.FCMResponse;
+import net.mechanixlab.das.uber.Model.Sender;
+import net.mechanixlab.das.uber.Model.Token;
 import net.mechanixlab.das.uber.Remote.IFCMService;
 import net.mechanixlab.das.uber.Remote.IGoogleAPI;
 
@@ -39,9 +48,14 @@ public class CustommarCall extends AppCompatActivity {
 
     TextView txtTime, txtAdrees, txtDistance;
 
+    Button btnCancel,btnAccept;
+
     MediaPlayer mediaPlayer;
 
     IGoogleAPI mService;
+    IFCMService mFcmService;
+
+    String customarID;
 
 
     @Override
@@ -49,11 +63,30 @@ public class CustommarCall extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_custommar_call);
 
+        mFcmService = Common.getFCMService();
+
+
         //intit view
 
         txtAdrees = findViewById(R.id.txtAdress);
         txtDistance = findViewById(R.id.txtDistance);
         txtTime = findViewById(R.id.txtTime);
+
+        btnAccept = findViewById(R.id.btnAccpts);
+        btnCancel = findViewById(R.id.btnCancel);
+
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (TextUtils.isEmpty(customarID))
+                {
+                    cancelBooking(customarID);
+                }
+
+            }
+        });
+
 
         mService = Common.getIGoogleAPI();
 
@@ -64,12 +97,39 @@ public class CustommarCall extends AppCompatActivity {
         if (getIntent() != null) {
             double lat = getIntent().getDoubleExtra("lat", -1.0);
             double lan = getIntent().getDoubleExtra("lng", -1.0);
+            customarID= getIntent().getStringExtra("customer");
+
 
             //Just copy and paste
 
             getDirection(lat, lan);
 
         }
+
+    }
+
+    private void cancelBooking(String customarID) {
+        Token token = new Token(customarID);
+        Notification notification = new Notification("Notice","Drivers has cancel your request ");
+
+        Sender sender = new Sender(token.getToken(),notification);
+        mFcmService.sendMessage(sender)
+                .enqueue(new Callback<FCMResponse>() {
+                    @Override
+                    public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
+                        if (response.body().success == 1)
+                        {
+                            Toast.makeText(CustommarCall.this," Cancelled" ,+Toast.LENGTH_LONG).show();
+                       finish();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<FCMResponse> call, Throwable t) {
+
+                    }
+                });
+
 
     }
 
