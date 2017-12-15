@@ -5,7 +5,7 @@ android {
     defaultConfig {
         applicationId "net.mechanixlab.das.uber"
         minSdkVersion 21
-        targetSdkVersion 26
+        targetSdkVersion 25
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -24,6 +24,8 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation 'com.google.firebase:firebase-auth:11.6.2'
     implementation 'com.google.firebase:firebase-database:11.6.2'
+    compile 'com.google.firebase:firebase-messaging:11.6.2'
+
     // implementation 'com.google.firebase:firebase-auth:11.6.2'
     implementation 'com.google.android.gms:play-services-maps:11.6.2'
     compile 'com.rengwuxian.materialedittext:library:2.1.4'
@@ -47,6 +49,9 @@ dependencies {
     //retrofit
     compile 'com.squareup.retrofit2:retrofit:2.3.0'
     compile 'com.squareup.retrofit2:converter-scalars:2.3.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.3.0'
+
+
 }
 
 

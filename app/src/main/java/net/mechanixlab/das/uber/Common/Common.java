@@ -11,11 +11,15 @@ import retrofit2.Retrofit;
 
 public class Common {
 
+    public static String curretToken=" ";
+
 
     public static final String driver_tbl = "Drivers";
     public static final String user_driver_tbl = "DriversInformation";
     public static final String user_rider_tbl = "RidersInformation";
     public static final String picup_request_tbl = "PickUpRequest";
+    public static final String token_tbl = "Tokens";
+
 
     public static final String baseURL = "https://www.map.googleapis.com.";
 
