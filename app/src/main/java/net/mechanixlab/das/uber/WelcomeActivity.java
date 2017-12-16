@@ -18,17 +18,13 @@ import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.github.glomadrian.materialanimatedswitch.MaterialAnimatedSwitch;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.Status;
+
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.Places;
-import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
-import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -43,21 +39,19 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.SquareCap;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 
 import android.Manifest;
 import android.util.Log;
-import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Toast;
 
 import net.mechanixlab.das.uber.Common.Common;
@@ -77,11 +71,13 @@ import retrofit2.Response;
 public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallback
         ,GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        LocationListener{
 
     private GoogleMap mMap;
+
+    //play Services
     private static final int MY_PERMISSION_REQUEST_CODE = 7000;
-    private static final int PLAY_SERVICE_RES_REQUEST = 1000;
+    private static final int PLAY_SERVICE_RES_REQUEST = 7001;
     private static final int REQUEST_LOCATION = 2;
 
     // private static final int ACCESS_FINE_LOCATION=100;
@@ -106,6 +102,8 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
 
     Marker mCurrent;
     MaterialAnimatedSwitch location_swtich;
+
+
     SupportMapFragment mapFragment;
 
 
@@ -206,6 +204,11 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
+        if (!FirebaseApp.getApps(this).isEmpty()) {
+            FirebaseRemoteConfig mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+
+        }
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -261,6 +264,8 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
             }
         });
 
+        //Geo Fire
+
         drivers = FirebaseDatabase.getInstance().getReference("Drivers");
         geoFire = new GeoFire(drivers);
         setUpLocation();
@@ -271,14 +276,16 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
 
     private void startLocationUpdates() {
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED && (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
             return;
 
         }
 
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mlocationRequest, this);
+    //    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mlocationRequest, this);
+
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,mlocationRequest,this);
 
     }
 
@@ -446,7 +453,8 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
         //super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case MY_PERMISSION_REQUEST_CODE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_DENIED)
+                {
                     if (checkPlayServices()) {
                         buildGoogleApiClient();
                         createLocationReuest();
@@ -463,9 +471,9 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     private void setUpLocation() {
 
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED &&(ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED))
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED))
         {
 
             ActivityCompat.requestPermissions(this,new String[]{
@@ -492,7 +500,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     }
 
     private void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
+       // mGoogleApiClient = new GoogleApiClient.Builder(this)
 //                .addConnectionCallbacks(this)
 //                .addOnConnectionFailedListener(this)
 //                .addApi(LocationServices.API)
@@ -501,12 +509,14 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
 //                .addApi(Places.GEO_DATA_API)
 //                .addConnectionCallbacks(this);
 
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
 
-                .addApi(LocationServices.API)
-                .addApi(Places.GEO_DATA_API)
-                .addOnConnectionFailedListener(this)
-                .addConnectionCallbacks(this)
-                .build();
+                    .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(LocationServices.API)
+                        .build();
+
+
         mGoogleApiClient.connect();
     }
 
@@ -524,11 +534,19 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
 
 
     private boolean checkPlayServices() {
-        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+       // int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+        GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
+         //GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this);
+        int resultCode = googleAPI.isGooglePlayServicesAvailable(this);
         if (resultCode != ConnectionResult.SUCCESS)
         {
-            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode))
-                GooglePlayServicesUtil.getErrorDialog(resultCode,this,PLAY_SERVICE_RES_REQUEST).show();
+            if(googleAPI.isUserResolvableError(resultCode)) {
+                googleAPI.getErrorDialog(this, resultCode,
+                        PLAY_SERVICE_RES_REQUEST).show();
+            }
+
+//            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode))
+//                GooglePlayServicesUtil.getErrorDialog(resultCode,this,PLAY_SERVICE_RES_REQUEST).show();
             else {
                 Toast.makeText(this, "This device is not supported", Toast.LENGTH_SHORT).show();
                 finish();
@@ -541,30 +559,35 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     private void stopLocationUpdate() {
 
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED &&(ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
             return;
 
         }
         else {
+           // LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,this);
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,this);
+
+
         }
     }
 
     private void disPlayLocation() {
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED &&(ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED))
+        {
             return;
 
         }
 
 
-         Common.mLastLocation =  LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+       //  Common.mLastLocation =  LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         //    mLastLocation = LocationServices.getFusedLocationProviderClient(mGoogleApiClient,this);
 
+        Common.mLastLocation=LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
         if (Common.mLastLocation != null) {
             if (location_swtich.isChecked()) {
@@ -572,7 +595,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
                 final double longitute =Common.mLastLocation.getLongitude();
 
 
-                //update to firebas34
+                //update to firebase
 
                 geoFire.setLocation(FirebaseAuth.getInstance().getCurrentUser().getUid(), new GeoLocation(latitude, longitute)
                         , new GeoFire.CompletionListener() {
@@ -642,6 +665,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        disPlayLocation();
 
 
     }
@@ -691,4 +715,6 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
             mGoogleApiClient.disconnect();
         }
     }
+
+
 }
