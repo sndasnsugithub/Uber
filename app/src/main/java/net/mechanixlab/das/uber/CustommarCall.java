@@ -110,25 +110,25 @@ public class CustommarCall extends AppCompatActivity {
 
     private void cancelBooking(String customarID) {
         Token token = new Token(customarID);
-        Notification notification = new Notification("Notice","Drivers has cancel your request ");
+       // Notification notification = new Notification("Notice","Drivers has cancel your request ");
 
-        Sender sender = new Sender(token.getToken(),notification);
-        mFcmService.sendMessage(sender)
-                .enqueue(new Callback<FCMResponse>() {
-                    @Override
-                    public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
-                        if (response.body().success == 1)
-                        {
-                            Toast.makeText(CustommarCall.this," Cancelled" ,+Toast.LENGTH_LONG).show();
-                       finish();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<FCMResponse> call, Throwable t) {
-
-                    }
-                });
+      //  Sender sender = new Sender(token.getToken(),notification);
+//        mFcmService.sendMessage(sender)
+//                .enqueue(new Callback<FCMResponse>() {
+//                    @Override
+//                    public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
+//                        if (response.body().success == 1)
+//                        {
+//                            Toast.makeText(CustommarCall.this," Cancelled" ,+Toast.LENGTH_LONG).show();
+//                       finish();
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onFailure(Call<FCMResponse> call, Throwable t) {
+//
+//                    }
+//                });
 
 
     }
