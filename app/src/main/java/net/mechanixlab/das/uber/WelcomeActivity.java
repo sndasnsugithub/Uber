@@ -257,6 +257,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
 
                     stopLocationUpdate();
                     mCurrent.remove();
+
                     mMap.clear();
                     handler.removeCallbacks(drawPathRunbale);
                     Snackbar.make(mapFragment.getView(), "Yor are Offline ", Snackbar.LENGTH_SHORT).show();
@@ -666,6 +667,15 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         disPlayLocation();
+        disPlayLocation();
+//        startLocationUpdates();
+
+
+
+        googleMap.addMarker(new MarkerOptions().position(new LatLng(23.8103,90.4125))
+                .title("Bangladesh"));
+
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(23.8103,90.4125),12));
 
 
     }
@@ -675,6 +685,7 @@ public class WelcomeActivity extends FragmentActivity implements OnMapReadyCallb
 
        Common.mLastLocation = location;
         disPlayLocation();
+
 
     }
 
